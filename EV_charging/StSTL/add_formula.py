@@ -1,9 +1,20 @@
+from StSTL.StSTL_class import StSTL
+
+from search_track_formula import search_track_formula
+
+from add_neg import add_neg
+from add_until import add_until
+from add_weak import add_weak
+from add_and import add_and
+from add_always import add_always
+from add_or import add_or
+from add_AP import add_AP
+
+
 def add_formula(formula, *args):
     """
     Encode a formula by assigning binary variables to its sub-formulas and adding MIP constraints.
     """
-    from globals import StSTL  # Assumes StSTL is globally defined
-
     add_result = 1
     if not isinstance(formula, str):
         print("Formula must be a string.")

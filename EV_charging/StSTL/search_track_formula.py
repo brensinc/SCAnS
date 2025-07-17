@@ -1,3 +1,5 @@
+from StSTL_class import StSTL
+
 def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
     """
     Search a formula in the tracked set and determine if it's already present.
@@ -16,13 +18,13 @@ def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
     is_found = False
     formu_index = 0
 
-    if StSTL['total_formu'] > 0 and StSTL['repeat_check']:
-        indices = [i for i, f in enumerate(StSTL['formu_str'][:StSTL['total_formu']]) if f == str_formula]
+    if StSTL.total_formu > 0 and StSTL.repeat_check:
+        indices = [i for i, f in enumerate(StSTL.formu_str[:StSTL.total_formu]) if f == str_formula]
         valid_indices = []
 
         for idx in indices:
-            same_time = (StSTL['formu_time'][idx] == sat_time_hint)
-            same_neg = (StSTL['formu_neg'][idx] == neg_prefix)
+            same_time = (StSTL.formu_time[idx] == sat_time_hint)
+            same_neg = (StSTL.formu_neg[idx] == neg_prefix)
             if same_time and same_neg:
                 valid_indices.append(idx)
 
@@ -33,15 +35,15 @@ def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
             is_found = True
     
     if not is_found:
-        StSTL['total_formu'] += 1
-        formu_index = StSTL['total_formu'] - 1
-        StSTL['formu_str'].append(str_formula)
-        StSTL['formu_time'].append(sat_time_hint)
-        StSTL['formu_neg'].append(neg_prefix)
-        StSTL['formu_bin'].append('binvar')  # placeholder for binary variable
+        StSTL.total_formu += 1
+        formu_index = StSTL.total_formu - 1
+        StSTL.formu_str.append(str_formula)
+        StSTL.formu_time.append(sat_time_hint)
+        StSTL.formu_neg.append(neg_prefix)
+        StSTL.formu_bin.append('binvar')  # placeholder for binary variable
 
-        if StSTL['display']:
-            if StSTL['repeat_check']:
+        if StSTL.display:
+            if StSTL.repeat_check:
                 print(f"Tracked new formula '{str_formula}' with time {sat_time_hint}, neg_prefix {neg_prefix}. Index = {formu_index}")
             else:
                 print(f"Tracked without checking repetition. Index = {formu_index}")

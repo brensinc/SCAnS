@@ -1,4 +1,8 @@
 import numpy as np
+from find_comma import find_comma
+from search_track_formula import search_track_formula
+from StSTL_class import StSTL
+from add_formula import add_formula
 
 def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
     """
@@ -14,8 +18,6 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
     Returns:
     - add_result: int, formu_index if successful, else 0
     """
-
-    global StSTL
 
     sat_time_hint = np.array(sat_time_hint)
     if sat_time_hint.ndim != 1:
@@ -48,9 +50,9 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
 
     for i in range(sub_num):
         is_found, index = search_track_formula(sub_str[i], sat_time_hint[i], neg_prefix)
-        if is_found and StSTL['display'] == 1:
-            print(f"In add_and(), formula {StSTL['formu_str'][index]} with sat_time_hint {StSTL['formu_time'][index]}, "
-                  f"neg_prefix {StSTL['formu_neg'][index]} that has already tracked is revoked by "
+        if is_found and StSTL.display == 1:
+            print(f"In add_and(), formula {StSTL.formu_str[index]} with sat_time_hint {StSTL.formu_time[index]}, "
+                  f"neg_prefix {StSTL.formu_neg[index]} that has already tracked is revoked by "
                   f"{sub_str[i]} with sat_time_hint {sat_time_hint[i]}")
         sub_index[i] = index
 
@@ -61,15 +63,15 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
             break
 
     if add_result:
-        sum_vars = sum(StSTL['formu_bin'][idx] for idx in sub_index)
+        sum_vars = sum(StSTL.formu_bin[idx] for idx in sub_index)
         if neg_prefix == 0:  # logical AND
-            StSTL['MIP_cons'].append(sum_vars - sub_num + 1 <= StSTL['formu_bin'][formu_index])
-            StSTL['MIP_cons'].append(StSTL['formu_bin'][formu_index] <= (1 / sub_num) * sum_vars)
+            StSTL.MIP_cons.append(sum_vars - sub_num + 1 <= StSTL.formu_bin[formu_index])
+            StSTL.MIP_cons.append(StSTL.formu_bin[formu_index] <= (1 / sub_num) * sum_vars)
         else:  # logical OR
-            StSTL['MIP_cons'].append((1 / sub_num) * sum_vars <= StSTL['formu_bin'][formu_index])
-            StSTL['MIP_cons'].append(StSTL['formu_bin'][formu_index] <= sum_vars)
+            StSTL.MIP_cons.append((1 / sub_num) * sum_vars <= StSTL.formu_bin[formu_index])
+            StSTL.MIP_cons.append(StSTL.formu_bin[formu_index] <= sum_vars)
 
-        StSTL['total_MIP_cons'] += 2
+        StSTL.total_MIP_cons += 2
         return formu_index
 
     return 0

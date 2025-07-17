@@ -1,4 +1,5 @@
 import pandas as pd
+from add_formula import add_formula
 
 # Global container to simulate MATLAB-style global struct
 class StSTLStruct:
