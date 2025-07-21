@@ -1,18 +1,6 @@
 import pandas as pd
-from add_formula import add_formula
-
-# Global container to simulate MATLAB-style global struct
-class StSTLStruct:
-    def __init__(self):
-        self.display = 1
-        self.formu_str = {}
-        self.formu_time = {}
-        self.formu_neg = {}
-        self.formu_bin = {}
-        self.total_MIP_cons = 0
-        self.MIP_cons = []
-
-StSTL = StSTLStruct()
+from StSTL.add_formula import add_formula
+from StSTL.StSTL_class import StSTL
 
 def find_comma(s):
     comma_index = [i for i, c in enumerate(s) if c == ',']

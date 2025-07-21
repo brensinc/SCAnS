@@ -5,12 +5,9 @@ import numpy as np
 import cvxpy as cp
 from scipy.stats import norm
 from StSTL.StSTL_class import StSTL
-from AP_EV import AP
-
-
+from MODEL_and_AP.AP_EV import AP
 
 # Assume global StSTL and AP structures
-
 def ap_to_neces_mip_ev(AP_tag, k, formu_index, neg_prefix, x_vars, u_vars):
     """
     Convert atomic proposition AP[AP_tag] at time step k into MIP constraints.
@@ -28,7 +25,6 @@ def ap_to_neces_mip_ev(AP_tag, k, formu_index, neg_prefix, x_vars, u_vars):
     Returns:
     - index of the formula in formu_bin
     """
-
     M = StSTL.large_num
     epsl = StSTL.small_num
 

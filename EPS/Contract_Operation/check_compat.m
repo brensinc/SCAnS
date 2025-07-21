@@ -31,9 +31,9 @@ verbose = 0;                        % display optimization information
 disp_feas = 0;                      % display a feasible solution
 
 i1 = add_formula(contract.A);
-enforce_formula(i1);
+enforce_formula(i1); # We dont encode il (contract assumptions) directly into the optimization problem but simply enforce them using enforce_formula?
 options = sdpsettings('solver','gurobi','verbose',verbose);
-diagnostic1 = optimize(StSTL.MIP_cons, SMPC.perf_func, options);
+diagnostic1 = optimize(StSTL.MIP_cons, SMPC.perf_func, options); # Only optimize controller problem with extra tight MIP constraints from the contract (?)
 if diagnostic1.problem ~= 1 && diagnostic1.problem ~= 0     % maybe gurobi is not applicable
     options = sdpsettings('solver','bmibnb','bmibnb.upper','fmincon','verbose',verbose);
     diagnostic1 = optimize(StSTL.MIP_cons, SMPC.perf_func, options);

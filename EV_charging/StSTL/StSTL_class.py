@@ -38,7 +38,7 @@ class StSTL_class():
             encoding_style (str): One of 'equivalent', 'sufficient', or 'necessary'.
         """
 
-        self.StSTL["style"] = encoding_style
+        self.style = encoding_style
         self.total_formu = 0
         self.MIP_cons = []
         self.total_MIP_cons= 0

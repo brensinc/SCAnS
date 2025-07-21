@@ -13,22 +13,6 @@ sys.path.extend([
 ])
 
 # ------------------------------
-# Step 1: Load EV system model
-# ------------------------------
-from MODEL_and_AP.MODEL_EV import MODEL
-
-# ------------------------------
-# Step 2: Load atomic propositions
-# ------------------------------
-from MODEL_and_AP.AP_EV import AP
-
-# ------------------------------
-# Step 3: Set up StSTL configuration (if needed)
-# ------------------------------
-
-from StSTL.StSTL_config import StSTL
-
-# ------------------------------
 # Step 4: Define contract (assumptions and guarantees)
 # ------------------------------
 from Contract_Operation.make_contract import make_contract
@@ -44,6 +28,8 @@ assumption_str = "And(AP(1), AP(2), AP(3))"
 # AP6: reach final node 4 (symbolic)
 # AP4: Initial SOC = 6
 
+
+# Fix this logic
 guarantee_str = (
     "And("
     "Global(And(AP(5), AP(7)), 0, T-1), "  # for all t, SOC >= 4 and budget >= 0
@@ -70,6 +56,7 @@ consis_result = check_consis(control_contract, encoding_style='suffi_and_neces')
 # ------------------------------
 # Final result summary
 # ------------------------------
+
 print("\n==== Contract Analysis Summary ====")
 print(f"Compatibility: {'Yes' if compat_result == 1 else 'No' if compat_result == 0 else 'Unknown'}")
 print(f"Consistency:   {'Yes' if consis_result == 1 else 'No' if consis_result == 0 else 'Unknown'}")

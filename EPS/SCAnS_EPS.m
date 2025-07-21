@@ -49,7 +49,7 @@ control_contract = make_contract(assumption, guarantee);
 % use sufficient encoding and necessary encoding to check the compatibility
 check_compat(control_contract, 'suffi_and_neces');
 
-% use sufficient encoding and necessary encoding to check the compatibility
+% use sufficient encoding and necessary encoding to check the consistency
 check_consis(control_contract, 'suffi_and_neces');     
 
 rmpath(to_add{1}, to_add{2}, to_add{3}, to_add{4});

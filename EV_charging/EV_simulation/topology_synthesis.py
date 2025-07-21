@@ -1,10 +1,13 @@
 # cno_optimization.py
 import cvxpy as cp
 import numpy as np
+from MODEL_and_AP.MODEL_EV import MODEL
 
 class cno_topology:
-    def __init__(self, n_nodes = 5):
-        self.n_nodes = n_nodes
+    def __init__(self,):
+        self.n_nodes = MODEL.n_nodes
+        self.T = MODEL.T
+
         # Store location of the chargers
         self.q1_idx = None
         self.q2_idx = None
@@ -13,6 +16,8 @@ class cno_topology:
         self.objective = None
         self.prob = None
         self.constraints = None
+
+        self.M = 1e4 # Define a large number
 
     def solve_cno_problem(self):
         # Network has n_nodes nodes: 0 through n_nodes
@@ -53,6 +58,9 @@ class cno_topology:
         self.prob = cp.Problem(self.objective, self.constraints)
         self.prob.solve()
 
+        self.q1_idx = int(self.q1_idx.value)
+        self.q2_idx = int(self.q2_idx.value)
+
         return self
 
         # print("Optimization status:", prob.status)
@@ -63,4 +71,4 @@ class cno_topology:
 
         # return int(self.q1_idx.value), int(self.q2_idx.value), prob
     
-charger_topology = cno_topology().solve_cno_problem()
+# charger_topology = cno_topology().solve_cno_problem()

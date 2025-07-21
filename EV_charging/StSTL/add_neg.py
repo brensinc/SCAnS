@@ -1,4 +1,4 @@
-from find_comma import find_comma
+from StSTL.find_comma import find_comma
 
 def add_neg(str_formula, formu_index, sat_time_hint, neg_prefix):
     """

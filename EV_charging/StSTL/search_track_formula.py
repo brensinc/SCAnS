@@ -1,6 +1,7 @@
-from StSTL_class import StSTL
+from StSTL.StSTL_class import StSTL
+import cvxpy as cp
 
-def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
+def search_track_formula(str_formula, sat_time_hint, neg_prefix):
     """
     Search a formula in the tracked set and determine if it's already present.
     If it's new, track it and assign a binary variable.
@@ -23,7 +24,7 @@ def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
         valid_indices = []
 
         for idx in indices:
-            same_time = (StSTL.formu_time[idx] == sat_time_hint)
+            same_time = (StSTL.formu_tim[idx] == sat_time_hint)
             same_neg = (StSTL.formu_neg[idx] == neg_prefix)
             if same_time and same_neg:
                 valid_indices.append(idx)
@@ -38,9 +39,10 @@ def search_track_formula(str_formula, sat_time_hint, neg_prefix, StSTL):
         StSTL.total_formu += 1
         formu_index = StSTL.total_formu - 1
         StSTL.formu_str.append(str_formula)
-        StSTL.formu_time.append(sat_time_hint)
+        StSTL.formu_tim.append(sat_time_hint)
         StSTL.formu_neg.append(neg_prefix)
-        StSTL.formu_bin.append('binvar')  # placeholder for binary variable
+        StSTL.formu_bin.append(cp.Variable(boolean=True)) # Append indicator for each formula to indicate whether it is satisfied.
+        # StSTL.formu_bin.append('placeholder')  # placeholder for binary variable
 
         if StSTL.display:
             if StSTL.repeat_check:

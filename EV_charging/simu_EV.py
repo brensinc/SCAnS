@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from EV_simulation.SMPC_config import SMPC_config
-from StSTL.StSTL_config import StSTL_config
+from EV_charging.StSTL.StSTL_class import StSTL_config
 import os
 
 # ========== Placeholder Functions to Implement ==========

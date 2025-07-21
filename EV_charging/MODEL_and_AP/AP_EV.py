@@ -1,5 +1,5 @@
 import numpy as np
-from .MODEL_EV import MODEL
+from MODEL_and_AP.MODEL_EV import MODEL
 
 # Define the APs as a list of dictionaries for readability and structure.
 # APs do not have a specific time window but can be modified at the time of contract definition.

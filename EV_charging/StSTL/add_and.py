@@ -1,8 +1,9 @@
 import numpy as np
-from find_comma import find_comma
-from search_track_formula import search_track_formula
-from StSTL_class import StSTL
-from add_formula import add_formula
+from StSTL.find_comma import find_comma
+from StSTL.search_track_formula import search_track_formula
+from StSTL.StSTL_class import StSTL
+from StSTL.add_formula import add_formula
+import cvxpy as cp
 
 def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
     """
@@ -18,8 +19,17 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
     Returns:
     - add_result: int, formu_index if successful, else 0
     """
+    
+    # # NOT SURE ABOUT THIS!
+    # if formu_index == 0:
+    #     is_found, formu_index = search_track_formula(f"And({str_expr})", sat_time_hint.tolist(), neg_prefix)
+    # if is_found:
+    #     print(f"In add_and(): formula already encoded, skipping.")
+    #     return formu_index
+    # # NOT SURE ABOUT THIS!
 
     sat_time_hint = np.array(sat_time_hint)
+    sat_time_hint = np.atleast_1d(sat_time_hint) # Convert sat_time_hint to a row vector
     if sat_time_hint.ndim != 1:
         raise ValueError("In add_and(), sat_time_hint has to be a row vector.")
 
@@ -45,11 +55,15 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
             sub_str[i + 1] = str_expr[comma_index[i] + 1:comma_index[i + 1]]
         sub_str[sub_num - 1] = str_expr[comma_index[comma_num - 1] + 1:]
 
+    # Test
+    sub_str = [s.strip() for s in sub_str]
+
+
     if given_sat_num == 1:
         sat_time_hint = np.full(sub_num, sat_time_hint[0])
 
     for i in range(sub_num):
-        is_found, index = search_track_formula(sub_str[i], sat_time_hint[i], neg_prefix)
+        is_found, index = search_track_formula(sub_str[i], sat_time_hint[i], neg_prefix) # Adds variables such as formu_bin (?) to the StSTL object
         if is_found and StSTL.display == 1:
             print(f"In add_and(), formula {StSTL.formu_str[index]} with sat_time_hint {StSTL.formu_time[index]}, "
                   f"neg_prefix {StSTL.formu_neg[index]} that has already tracked is revoked by "
@@ -62,8 +76,16 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
         if add_result == 0:
             break
 
+     # Create the binary variable for the overall formula (this is the fix). Should we put this in search_track_formula?
+    # StSTL.formu_bin.append(cp.Variable(boolean=True))
+
+    # Ensure subformulas are defined
+    for idx in sub_index:
+        if StSTL.formu_bin[idx] is None:
+            raise ValueError(f"StSTL.formu_bin[{idx}] is None — subformula not encoded properly.")
+
     if add_result:
-        sum_vars = sum(StSTL.formu_bin[idx] for idx in sub_index)
+        sum_vars = sum(StSTL.formu_bin[idx] for idx in sub_index) # Define AFFINE cvxpy constraint
         if neg_prefix == 0:  # logical AND
             StSTL.MIP_cons.append(sum_vars - sub_num + 1 <= StSTL.formu_bin[formu_index])
             StSTL.MIP_cons.append(StSTL.formu_bin[formu_index] <= (1 / sub_num) * sum_vars)
@@ -72,6 +94,8 @@ def add_and(str_expr, formu_index, sat_time_hint, neg_prefix):
             StSTL.MIP_cons.append(StSTL.formu_bin[formu_index] <= sum_vars)
 
         StSTL.total_MIP_cons += 2
-        return formu_index
+        # return formu_index
+        return add_result
 
+    # return -1
     return 0

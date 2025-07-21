@@ -5,107 +5,119 @@ import numpy as np
 import pandas as pd
 from IPython.display import display
 from MODEL_and_AP.global_state import contract_checking
+# from EV_simulation.topology_synthesis import charger_topology
 
 from StSTL.StSTL_class import StSTL
 
+class controller:
+    def __init__(self, charger_topology):
+        self.charger_topology = charger_topology
 
-def solve_vehicle_problem(q1_idx, q2_idx, contract_checking = 0):
-    T = 6  # Total time steps
-    n_nodes = 5
-    M = 1000  # Big-M constant
+         # State variables
+        self.soc = cp.Variable(charger_topology.T + 1)
+        self.budget = cp.Variable(charger_topology.T + 1)
 
-    # State variables
-    soc = cp.Variable(T + 1)
-    budget = cp.Variable(T + 1)
+        # Binary action variables
+        self.move = cp.Variable(charger_topology.T, boolean=True)
+        self.charge = cp.Variable(charger_topology.T, boolean=True)
+        self.idle = cp.Variable(charger_topology.T, boolean=True)
 
-    # Binary action variables
-    move = cp.Variable(T, boolean=True)
-    charge = cp.Variable(T, boolean=True)
-    idle = cp.Variable(T, boolean=True)
+        # Done indicator
+        self.done = cp.Variable(charger_topology.T, boolean=True)
 
-    # Done indicator
-    done = cp.Variable(T, boolean=True)
+        # One-hot position encoding
+        self.pos_bin = cp.Variable((charger_topology.T + 1, charger_topology.n_nodes), boolean=True)
 
-    # One-hot position encoding
-    pos_bin = cp.Variable((T + 1, n_nodes), boolean=True)
+        # Define constants
+        self.initial_soc = 6
+        self.initial_budget = 12
 
-    constraints = []
+        self.x_vars = [self.soc, self.budget, self.pos_bin, self.charger_topology.q1_idx, self.charger_topology.q2_idx] # x_vars: list of cp.Variable vectors [SOC[k], budget[k], pos[k], q1, q2]
+        self.u_vars = [self.move, self.charge, self.idle] # u_vars: list of cp.Variable vectors [move[k], charge[k], idle[k]]
 
-    if contract_checking == 1: # If we are using optimization problem to check compat/consis rather than solving for a controller.
-        constraints += StSTL.MIP_cons # Add MIP constraints from the contract to the controller optimization problem.
 
-    # Initial conditions
-    constraints += [soc[0] == 6, budget[0] == 12, pos_bin[0, 0] == 1]
-    for i in range(1, n_nodes):
-        constraints += [pos_bin[0, i] == 0]
+    def solve_vehicle_problem(self, contract_checking = 0):
+        constraints = []
 
-    R_bar = 6  # Charging cost
+        if contract_checking == 1: # If we are using optimization problem to check compat/consis rather than solving for a controller.
+            constraints += StSTL.MIP_cons # Add MIP constraints from the contract to the controller optimization problem.
 
-    for t in range(T):
-        constraints += [cp.sum(pos_bin[t, :]) == 1, cp.sum(pos_bin[t + 1, :]) == 1]
-        constraints += [move[t] + charge[t] + idle[t] == 1]
+        # Initial conditions
+        constraints += [self.soc[0] == self.initial_soc, self.budget[0] == self.initial_budget, self.pos_bin[0, 0] == 1]
+        for i in range(1, self.charger_topology.n_nodes):
+            constraints += [self.pos_bin[0, i] == 0]
 
-        # ---------------------------
+        R_bar = 6  # Charging cost
 
-        # We're having an issue with the movement constraints!!! They're allowing both charging and moving at the same time...
+        for t in range(self.charger_topology.T):
+            constraints += [cp.sum(self.pos_bin[t, :]) == 1, cp.sum(self.pos_bin[t + 1, :]) == 1]
+            # constraints += [self.move[t] + self.charge[t] + self.idle[t] == 1]
+            constraints += [self.move[t] + self.charge[t] <= 1]
 
-        # ---------------------------
 
-        # Movement constraints
-        for i in range(n_nodes - 1):
-            constraints += [
-                # Transition from node i to i+1 only if move[t] == 1 and charge[t] == 0
-                pos_bin[t, i] + move[t] - pos_bin[t + 1, i + 1] <= 1,
-                pos_bin[t + 1, i + 1] - pos_bin[t, i] - move[t] <= 0,
+            # ---------------------------
 
-                # Can only move when you don't charge. But the constraints aren't working!!!
-                pos_bin[t, i] + charge[t] - pos_bin[t + 1, i + 1] <= 1,
-                pos_bin[t + 1, i + 1] - pos_bin[t, i] - charge[t] <= 0,
-            ]
-        constraints += [pos_bin[t, 4] + move[t] <= 1]  # Can't move past node 4
+            # We're having an issue with the movement constraints!!! They're allowing both charging and moving at the same time...
 
-        # Dynamics
-        constraints += [soc[t + 1] == soc[t] + 2 * charge[t] - move[t]]
-        constraints += [budget[t + 1] == budget[t] - R_bar * charge[t]]
-        constraints += [soc[t + 1] >= 4, budget[t + 1] >= 0]
-        constraints += [charge[t] <= pos_bin[t, q1_idx] + pos_bin[t, q2_idx]]
+            # ---------------------------
 
-        # Lock state if idle
-        constraints += [soc[t + 1] - soc[t] <= M * (1 - idle[t])]
-        constraints += [soc[t] - soc[t + 1] <= M * (1 - idle[t])]
-        constraints += [budget[t + 1] - budget[t] <= M * (1 - idle[t])]
-        constraints += [budget[t] - budget[t + 1] <= M * (1 - idle[t])]
-        for i in range(n_nodes):
-            constraints += [
-                pos_bin[t + 1, i] - pos_bin[t, i] <= M * (1 - idle[t]),
-                pos_bin[t, i] - pos_bin[t + 1, i] <= M * (1 - idle[t])
-            ]
+            # Movement constraints
+            for i in range(self.charger_topology.n_nodes - 1):
+                constraints += [
+                    # Transition from node i to i+1 only if move[t] == 1 and charge[t] == 0
+                    self.pos_bin[t, i] + self.move[t] - self.pos_bin[t + 1, i + 1] <= 1,
+                    self.pos_bin[t + 1, i + 1] - self.pos_bin[t, i] - self.move[t] <= 0,
 
-        # Done flag if at destination
-        constraints += [done[t] <= pos_bin[t, n_nodes - 1]]
+                    # Can only move when you don't charge. But the constraints aren't working!!!
+                    self.pos_bin[t, i] + self.charge[t] - self.pos_bin[t + 1, i + 1] <= 1,
+                    self.pos_bin[t + 1, i + 1] - self.pos_bin[t, i] - self.charge[t] <= 0,
+                ]
+            constraints += [self.pos_bin[t, 4] + self.move[t] <= 1]  # Can't move past node 4
 
-    # Final conditions
-    constraints += [pos_bin[T, 4] == 1, soc[T] >= 5]
+            # Dynamics
+            constraints += [self.soc[t + 1] == self.soc[t] + 2 * self.charge[t] - self.move[t]]
+            constraints += [self.budget[t + 1] == self.budget[t] - R_bar * self.charge[t]]
+            constraints += [self.soc[t + 1] >= 4, self.budget[t + 1] >= 0]
+            constraints += [self.charge[t] <= self.pos_bin[t, self.charger_topology.q1_idx] + self.pos_bin[t, self.charger_topology.q2_idx]] 
+            
+            # # Lock state if idle
+            # constraints += [self.soc[t + 1] - self.soc[t] <= self.charger_topology.M * (1 - self.idle[t])]
+            # constraints += [self.soc[t] - self.soc[t + 1] <= self.charger_topology.M * (1 - self.idle[t])]
+            # constraints += [self.budget[t + 1] - self.budget[t] <= self.charger_topology.M * (1 - self.idle[t])]
+            # constraints += [self.budget[t] - self.budget[t + 1] <= self.charger_topology.M * (1 - self.idle[t])]
+            # for i in range(self.charger_topology.n_nodes):
+            #     constraints += [
+            #         self.pos_bin[t + 1, i] - self.pos_bin[t, i] <= self.charger_topology.M * (1 - self.idle[t]),
+            #         self.pos_bin[t, i] - self.pos_bin[t + 1, i] <= self.charger_topology.M * (1 - self.idle[t])
+            #     ]
 
-    # Maximize early completion
-    objective = cp.Maximize(cp.sum(idle))
-    problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.ECOS_BB)
+            # Done flag if at destination
+            constraints += [self.done[t] <= self.pos_bin[t, self.charger_topology.n_nodes - 1]]
 
-    if soc.value is None:
-        return None, None, None, None, None
+        # Final conditions
+        constraints += [self.pos_bin[self.charger_topology.T, 4] == 1, self.soc[self.charger_topology.T] >= 5]
 
-    result = {
-        "t": list(range(T + 1)),
-        "soc": soc.value.round(2),
-        "budget": budget.value.round(2),
-        "position": [np.argmax(pos_bin.value[t]) for t in range(T + 1)],
-        "move": list(move.value.round().astype(int)) + [None],
-        "charge": list(charge.value.round().astype(int)) + [None],
-        "idle": list(idle.value.round().astype(int)) + [None],
-        "done": list(done.value.round().astype(int)) + [None],
-    }
+        # Maximize early completion
+        objective = cp.Maximize(cp.sum(self.idle))
+        problem = cp.Problem(objective, constraints)
+        problem.solve(solver=cp.ECOS_BB)
 
-    df = pd.DataFrame(result).set_index("t")
-    display(df)
-    return soc.value, budget.value, move.value, charge.value, idle.value, pos_bin.value
+        if self.soc.value is None:
+            return None, None, None, None, None
+
+        result = {
+            "t": list(range(self.charger_topology.T + 1)),
+            "soc": self.soc.value.round(2),
+            "budget": self.budget.value.round(2),
+            "position": [np.argmax(self.pos_bin.value[t]) for t in range(self.charger_topology.T + 1)],
+            "move": list(self.move.value.round().astype(int)) + [None],
+            "charge": list(self.charge.value.round().astype(int)) + [None],
+            "idle": list(self.idle.value.round().astype(int)) + [None],
+            "done": list(self.done.value.round().astype(int)) + [None],
+        }
+
+        df = pd.DataFrame(result).set_index("t")
+        display(df)
+
+        return self
+        # return self.soc.value, self.budget.value, self.move.value, self.charge.value, self.idle.value, self.pos_bin.value
