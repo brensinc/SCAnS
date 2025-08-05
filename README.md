@@ -1,7 +1,7 @@
 [README.md](https://github.com/user-attachments/files/21603300/README.md)
 # SCAnS_EV: Contract-Based Control for Electric Vehicle Charging
 
-Presentation: https://docs.google.com/presentation/d/1kUBYN-DIbtbbSdDooUG1hGW9NuKrLsdw5A5mRggsGEQ/edit?slide=id.g363654dc9ca_0_57#slide=id.g363654dc9ca_0_57
+[Project Presentation](https://docs.google.com/presentation/d/1kUBYN-DIbtbbSdDooUG1hGW9NuKrLsdw5A5mRggsGEQ/edit?slide=id.g363654dc9ca_0_57#slide=id.g363654dc9ca_0_57)
 
 This repository is a **work in progress** extending the [SCAnS](https://github.com/ucb-cyberphys/SCAnS) framework to a new domain: electric vehicle (EV) route and charging planning.
 
